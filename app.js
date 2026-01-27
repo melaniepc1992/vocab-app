@@ -632,4 +632,19 @@ const styles = {
   backButton: { background: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
   counter: { color: 'white', fontSize: '18px', fontWeight: 'bold' },
   flashcard: { background: 'white', borderRadius: '20px', padding: '40px', minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' },
-  completedCard: { background: 'white', borderRadius: '20px', padding: '60px 40px', textAlign: 'center',
+  completedCard: { background: 'white', borderRadius: '20px', padding: '60px 40px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' },
+  languageTag: { background: '#f3f4f6', padding: '8px 16px', borderRadius: '20px', marginBottom: '20px', fontWeight: '600' },
+  writing: { fontSize: '48px', fontWeight: 'bold', margin: '0 0 20px 0', textAlign: 'center' },
+  answer: { textAlign: 'center', marginBottom: '20px' },
+  reading: { fontSize: '28px', color: '#6366f1', margin: '0 0 10px 0', fontWeight: '600' },
+  meaning: { fontSize: '20px', color: '#666', margin: '0 0 15px 0' },
+  tags: { display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' },
+  tag: { padding: '6px 14px', background: '#f3f4f6', borderRadius: '8px', fontSize: '14px', fontWeight: '600' },
+  revealButton: { background: '#6366f1', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', marginTop: '20px', boxShadow: '0 2px 8px rgba(99,102,241,0.3)' },
+  statusButtons: { display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap', justifyContent: 'center' },
+  statusButton: { padding: '12px 20px', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', minWidth: '120px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+  navigation: { display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '10px' },
+  navButton: { background: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }
+};
+
+ReactDOM.render(<App />, document.getElementById('root'));
