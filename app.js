@@ -65,7 +65,7 @@ function App() {
         w.id === editingId ? { 
           ...formData, 
           id: editingId,
-          createdAt: w.createdAt // Mantener fecha de creación original
+          createdAt: w.createdAt
         } : w
       );
       saveWords(updated);
@@ -141,7 +141,6 @@ function App() {
     saveWords(updated);
   };
 
-  // Filtrar por idioma Y nivel
   const filteredWords = words.filter(w => {
     const languageMatch = selectedLanguage === 'todos' || w.language === selectedLanguage;
     const levelMatch = selectedLevel === 'todos' || w.level === selectedLevel;
@@ -151,10 +150,9 @@ function App() {
   const startFlashcards = () => {
     const now = new Date();
     
-    // Palabras que necesitan revisión
     const needReview = filteredWords.filter(w => {
       if (w.status === 'excluir') return false;
-      if (w.status === 'la-se') return false; // Las que sé no se revisan
+      if (w.status === 'la-se') return false;
       
       const nextReviewDate = w.nextReview ? new Date(w.nextReview) : new Date(0);
       return now >= nextReviewDate;
@@ -165,7 +163,6 @@ function App() {
       return;
     }
 
-    // Priorizar "no-se" sobre "algo-se"
     const sorted = needReview.sort((a, b) => {
       if (a.status === 'no-se' && b.status !== 'no-se') return -1;
       if (a.status !== 'no-se' && b.status === 'no-se') return 1;
@@ -182,11 +179,9 @@ function App() {
   const nextCard = () => {
     setShowAnswer(false);
     
-    // Si hay más tarjetas, avanzar
     if (currentCardIndex < flashcardWords.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
     } else {
-      // Terminamos todas las tarjetas, verificar si hay que repetir "algo-se"
       const toRepeat = flashcardWords.filter(w => 
         w.status === 'algo-se' && !reviewedInSession.includes(w.id)
       );
@@ -205,7 +200,6 @@ function App() {
     const currentWord = flashcardWords[currentCardIndex];
     updateWordStatus(currentWord.id, newStatus);
     
-    // Actualizar la palabra en la lista de flashcards actual
     const updatedFlashcards = flashcardWords.map(w => 
       w.id === currentWord.id ? { ...w, status: newStatus } : w
     );
@@ -214,7 +208,6 @@ function App() {
     nextCard();
   };
 
-  // Estadísticas por idioma
   const languageStats = {
     japones: words.filter(w => w.language === 'japones').length,
     chino: words.filter(w => w.language === 'chino').length,
@@ -222,10 +215,8 @@ function App() {
     otro: words.filter(w => w.language === 'otro').length
   };
 
-  // Niveles únicos en las palabras
   const uniqueLevels = [...new Set(words.map(w => w.level))].sort();
 
-  // Contar palabras que necesitan repaso
   const needsReviewCount = filteredWords.filter(w => {
     if (w.status === 'excluir' || w.status === 'la-se') return false;
     const now = new Date();
@@ -358,7 +349,6 @@ function App() {
         </p>
       </div>
 
-      {/* FILTRO POR IDIOMA */}
       <div style={styles.filterSection}>
         <h3 style={styles.filterTitle}>🌐 Filtrar por idioma:</h3>
         <div style={styles.filters}>
@@ -390,7 +380,6 @@ function App() {
         </div>
       </div>
 
-      {/* FILTRO POR NIVEL */}
       {uniqueLevels.length > 0 && (
         <div style={styles.filterSection}>
           <h3 style={styles.filterTitle}>📊 Filtrar por nivel:</h3>
@@ -547,7 +536,6 @@ function App() {
                 <p style={styles.cardReading}>{word.reading}</p>
                 <p style={styles.cardMeaning}>{word.meaning}</p>
                 
-                {/* Selectores rápidos en la tarjeta */}
                 <div style={styles.quickEdit}>
                   <select 
                     value={word.status || 'no-se'}
@@ -613,38 +601,37 @@ const styles = {
   addBtn: { flex: 1, padding: '16px', background: '#6366f1', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(99,102,241,0.3)' },
   flashcardBtn: { flex: 1, padding: '16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(139,92,246,0.3)' },
   wordsList: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  wordCard: { background: 'white', padding: '16px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'transform 0.2s, box-shadow 0.2s' },
+  wordCard: { background: 'white', padding: '16px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
   wordHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' },
   cardWriting: { fontSize: '24px', fontWeight: 'bold', margin: '0' },
-  editBtn: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', padding: '5px', opacity: 0.6, transition: 'opacity 0.2s' },
+  editBtn: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', padding: '5px', opacity: 0.6 },
   cardReading: { fontSize: '18px', color: '#6366f1', margin: '0 0 5px 0' },
   cardMeaning: { color: '#666', margin: '0 0 10px 0' },
   quickEdit: { marginBottom: '10px' },
   quickSelect: { padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px', background: 'white', cursor: 'pointer', width: '100%', maxWidth: '200px' },
   cardTags: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   cardTag: { padding: '4px 10px', background: '#f3f4f6', borderRadius: '6px', fontSize: '12px', fontWeight: '600' },
-  deleteBtn: { background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', padding: '5px', transition: 'transform 0.2s', opacity: 0.6 },
+  deleteBtn: { background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', padding: '5px', opacity: 0.6 },
   empty: { background: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', color: '#999' },
   
   // Flashcard styles
   flashcardContainer: { maxWidth: '600px', margin: '0 auto', padding: '20px' },
   flashcardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  backButton: { background: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+  backButton: { background: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' },
   counter: { color: 'white', fontSize: '18px', fontWeight: 'bold' },
   flashcard: { background: 'white', borderRadius: '20px', padding: '40px', minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' },
-  completedCard: { background: 'white', borderRadius: '20px', padding: '60px 40px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' },
   languageTag: { background: '#f3f4f6', padding: '8px 16px', borderRadius: '20px', marginBottom: '20px', fontWeight: '600' },
   writing: { fontSize: '48px', fontWeight: 'bold', margin: '0 0 20px 0', textAlign: 'center' },
   answer: { textAlign: 'center', marginBottom: '20px' },
   reading: { fontSize: '28px', color: '#6366f1', margin: '0 0 10px 0', fontWeight: '600' },
   meaning: { fontSize: '20px', color: '#666', margin: '0 0 15px 0' },
-  tags: { display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' },
+  tags: { display: 'flex', gap: '10px', justifyContent: 'center' },
   tag: { padding: '6px 14px', background: '#f3f4f6', borderRadius: '8px', fontSize: '14px', fontWeight: '600' },
-  revealButton: { background: '#6366f1', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', marginTop: '20px', boxShadow: '0 2px 8px rgba(99,102,241,0.3)' },
+  revealButton: { background: '#6366f1', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', marginTop: '20px' },
   statusButtons: { display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap', justifyContent: 'center' },
-  statusButton: { padding: '12px 20px', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', minWidth: '120px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
-  navigation: { display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '10px' },
-  navButton: { background: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }
+  statusButton: { padding: '12px 20px', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' },
+  navigation: { display: 'flex', justifyContent: 'space-between', marginTop: '20px' },
+  navButton: { background: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }
 };
 
 ReactDOM.render(<App />, document.getElementById('root'));
