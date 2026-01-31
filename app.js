@@ -1,6 +1,7 @@
 const { useState, useEffect } = React;
 
 const STORAGE_KEY = 'vocab_words';
+const ITEMS_PER_PAGE = 10;
 
 // Algoritmo de repetición espaciada
 const calculateNextReview = (status, lastReview) => {
@@ -30,6 +31,7 @@ function App() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [flashcardWords, setFlashcardWords] = useState([]);
   const [reviewedInSession, setReviewedInSession] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     writing: '',
     reading: '',
@@ -141,11 +143,23 @@ function App() {
     saveWords(updated);
   };
 
+  // Filtrar por idioma Y nivel
   const filteredWords = words.filter(w => {
     const languageMatch = selectedLanguage === 'todos' || w.language === selectedLanguage;
     const levelMatch = selectedLevel === 'todos' || w.level === selectedLevel;
     return languageMatch && levelMatch;
   });
+
+  // Paginación
+  const totalPages = Math.ceil(filteredWords.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedWords = filteredWords.slice(startIndex, endIndex);
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedLanguage, selectedLevel]);
 
   const startFlashcards = () => {
     const now = new Date();
@@ -267,10 +281,12 @@ function App() {
 
         <div style={styles.flashcard}>
           <div style={styles.languageTag}>
-            {currentWord.language === 'japones' && '🇯🇵 Japonés'}
-            {currentWord.language === 'chino' && '🇨🇳 Chino'}
-            {currentWord.language === 'coreano' && '🇰🇷 Coreano'}
-            {currentWord.language === 'otro' && '🌐 Otro'}
+            <text style={styles.languageTagText}>
+              {currentWord.language === 'japones' && '🇯🇵 Japonés'}
+              {currentWord.language === 'chino' && '🇨🇳 Chino'}
+              {currentWord.language === 'coreano' && '🇰🇷 Coreano'}
+              {currentWord.language === 'otro' && '🌐 Otro'}
+            </text>
           </div>
           
           <h2 style={styles.writing}>{currentWord.writing}</h2>
@@ -521,60 +537,88 @@ function App() {
             </p>
           </div>
         ) : (
-          filteredWords.map(word => (
-            <div key={word.id} style={styles.wordCard}>
-              <div style={{flex: 1}}>
-                <div style={styles.wordHeader}>
-                  <h3 style={styles.cardWriting}>{word.writing}</h3>
-                  <button 
-                    onClick={() => handleEdit(word)} 
-                    style={styles.editBtn}
-                    title="Editar palabra">
-                    ✏️
-                  </button>
+          <>
+            {paginatedWords.map(word => (
+              <div key={word.id} style={styles.wordCard}>
+                <div style={{flex: 1}}>
+                  <div style={styles.wordHeader}>
+                    <h3 style={styles.cardWriting}>{word.writing}</h3>
+                    <button 
+                      onClick={() => handleEdit(word)} 
+                      style={styles.editBtn}
+                      title="Editar palabra">
+                      ✏️
+                    </button>
+                  </div>
+                  <p style={styles.cardReading}>{word.reading}</p>
+                  <p style={styles.cardMeaning}>{word.meaning}</p>
+                  
+                  <div style={styles.quickEdit}>
+                    <select 
+                      value={word.status || 'no-se'}
+                      onChange={(e) => updateWordField(word.id, 'status', e.target.value)}
+                      style={styles.quickSelect}>
+                      <option value="no-se">❌ No la sé</option>
+                      <option value="algo-se">⚠️ Algo sé</option>
+                      <option value="la-se">✅ La sé</option>
+                      <option value="excluir">🚫 Excluir</option>
+                    </select>
+                  </div>
+
+                  <div style={styles.cardTags}>
+                    <span style={styles.cardTag}>
+                      {word.language === 'japones' && '🇯🇵'}
+                      {word.language === 'chino' && '🇨🇳'}
+                      {word.language === 'coreano' && '🇰🇷'}
+                      {word.language === 'otro' && '🌐'}
+                      {' '}{word.language}
+                    </span>
+                    <span style={styles.cardTag}>{word.type}</span>
+                    <span style={styles.cardTag}>{word.level}</span>
+                    <span style={{...styles.cardTag, fontSize: '11px', opacity: 0.7}}>
+                      📅 {formatDate(word.createdAt)}
+                    </span>
+                  </div>
+                  
+                  {word.reviewCount > 0 && (
+                    <p style={{fontSize: '11px', color: '#999', marginTop: '8px'}}>
+                      Revisiones: {word.reviewCount} • Último repaso: {formatDate(word.lastReview)}
+                    </p>
+                  )}
                 </div>
-                <p style={styles.cardReading}>{word.reading}</p>
-                <p style={styles.cardMeaning}>{word.meaning}</p>
                 
-                <div style={styles.quickEdit}>
-                  <select 
-                    value={word.status || 'no-se'}
-                    onChange={(e) => updateWordField(word.id, 'status', e.target.value)}
-                    style={styles.quickSelect}>
-                    <option value="no-se">❌ No la sé</option>
-                    <option value="algo-se">⚠️ Algo sé</option>
-                    <option value="la-se">✅ La sé</option>
-                    <option value="excluir">🚫 Excluir</option>
-                  </select>
+                <button onClick={() => handleDelete(word.id)} style={styles.deleteBtn}>
+                  🗑️
+                </button>
+              </div>
+            ))}
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div style={styles.pagination}>
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  style={{...styles.pageBtn, ...(currentPage === 1 ? styles.pageBtnDisabled : {})}}>
+                  ← Anterior
+                </button>
+
+                <div style={styles.pageInfo}>
+                  <div style={styles.pageText}>Página {currentPage} de {totalPages}</div>
+                  <div style={styles.pageSubtext}>
+                    Mostrando {startIndex + 1}-{Math.min(endIndex, filteredWords.length)} de {filteredWords.length}
+                  </div>
                 </div>
 
-                <div style={styles.cardTags}>
-                  <span style={styles.cardTag}>
-                    {word.language === 'japones' && '🇯🇵'}
-                    {word.language === 'chino' && '🇨🇳'}
-                    {word.language === 'coreano' && '🇰🇷'}
-                    {word.language === 'otro' && '🌐'}
-                    {' '}{word.language}
-                  </span>
-                  <span style={styles.cardTag}>{word.type}</span>
-                  <span style={styles.cardTag}>{word.level}</span>
-                  <span style={{...styles.cardTag, fontSize: '11px', opacity: 0.7}}>
-                    📅 {formatDate(word.createdAt)}
-                  </span>
-                </div>
-                
-                {word.reviewCount > 0 && (
-                  <p style={{fontSize: '11px', color: '#999', marginTop: '8px'}}>
-                    Revisiones: {word.reviewCount} • Último repaso: {formatDate(word.lastReview)}
-                  </p>
-                )}
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  style={{...styles.pageBtn, ...(currentPage === totalPages ? styles.pageBtnDisabled : {})}}>
+                  Siguiente →
+                </button>
               </div>
-              
-              <button onClick={() => handleDelete(word.id)} style={styles.deleteBtn}>
-                🗑️
-              </button>
-            </div>
-          ))
+            )}
+          </>
         )}
       </div>
     </div>
@@ -601,37 +645,82 @@ const styles = {
   addBtn: { flex: 1, padding: '16px', background: '#6366f1', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(99,102,241,0.3)' },
   flashcardBtn: { flex: 1, padding: '16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(139,92,246,0.3)' },
   wordsList: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  wordCard: { background: 'white', padding: '16px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
+  wordCard: { background: 'white', padding: '16px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'transform 0.2s, box-shadow 0.2s' },
   wordHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' },
   cardWriting: { fontSize: '24px', fontWeight: 'bold', margin: '0' },
-  editBtn: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', padding: '5px', opacity: 0.6 },
+  editBtn: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', padding: '5px', opacity: 0.6, transition: 'opacity 0.2s' },
   cardReading: { fontSize: '18px', color: '#6366f1', margin: '0 0 5px 0' },
   cardMeaning: { color: '#666', margin: '0 0 10px 0' },
   quickEdit: { marginBottom: '10px' },
   quickSelect: { padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px', background: 'white', cursor: 'pointer', width: '100%', maxWidth: '200px' },
   cardTags: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   cardTag: { padding: '4px 10px', background: '#f3f4f6', borderRadius: '6px', fontSize: '12px', fontWeight: '600' },
-  deleteBtn: { background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', padding: '5px', opacity: 0.6 },
+  deleteBtn: { background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', padding: '5px', transition: 'transform 0.2s', opacity: 0.6 },
   empty: { background: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', color: '#999' },
+  
+  // Paginación
+  pagination: { 
+    background: 'white', 
+    padding: '20px', 
+    borderRadius: '12px', 
+    marginTop: '20px',
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+  },
+  pageBtn: { 
+    padding: '12px 24px', 
+    background: '#6366f1', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px', 
+    fontSize: '14px', 
+    fontWeight: '600', 
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  pageBtnDisabled: { 
+    background: '#e5e7eb', 
+    color: '#9ca3af',
+    cursor: 'not-allowed',
+    opacity: 0.6 
+  },
+  pageInfo: { 
+    textAlign: 'center',
+    flex: 1,
+    padding: '0 20px'
+  },
+  pageText: { 
+    fontSize: '16px', 
+    fontWeight: '600', 
+    color: '#333',
+    marginBottom: '4px'
+  },
+  pageSubtext: { 
+    fontSize: '12px', 
+    color: '#666' 
+  },
   
   // Flashcard styles
   flashcardContainer: { maxWidth: '600px', margin: '0 auto', padding: '20px' },
   flashcardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  backButton: { background: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' },
+  backButton: { background: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
   counter: { color: 'white', fontSize: '18px', fontWeight: 'bold' },
   flashcard: { background: 'white', borderRadius: '20px', padding: '40px', minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' },
+  completedCard: { background: 'white', borderRadius: '20px', padding: '60px 40px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' },
   languageTag: { background: '#f3f4f6', padding: '8px 16px', borderRadius: '20px', marginBottom: '20px', fontWeight: '600' },
   writing: { fontSize: '48px', fontWeight: 'bold', margin: '0 0 20px 0', textAlign: 'center' },
   answer: { textAlign: 'center', marginBottom: '20px' },
   reading: { fontSize: '28px', color: '#6366f1', margin: '0 0 10px 0', fontWeight: '600' },
   meaning: { fontSize: '20px', color: '#666', margin: '0 0 15px 0' },
-  tags: { display: 'flex', gap: '10px', justifyContent: 'center' },
+  tags: { display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' },
   tag: { padding: '6px 14px', background: '#f3f4f6', borderRadius: '8px', fontSize: '14px', fontWeight: '600' },
-  revealButton: { background: '#6366f1', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', marginTop: '20px' },
+  revealButton: { background: '#6366f1', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', marginTop: '20px', boxShadow: '0 2px 8px rgba(99,102,241,0.3)' },
   statusButtons: { display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap', justifyContent: 'center' },
-  statusButton: { padding: '12px 20px', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' },
-  navigation: { display: 'flex', justifyContent: 'space-between', marginTop: '20px' },
-  navButton: { background: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }
+  statusButton: { padding: '12px 20px', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', minWidth: '120px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+  navigation: { display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '10px' },
+  navButton: { background: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }
 };
 
 ReactDOM.render(<App />, document.getElementById('root'));
