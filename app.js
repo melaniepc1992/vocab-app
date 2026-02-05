@@ -32,6 +32,7 @@ function App() {
   const [flashcardWords, setFlashcardWords] = useState([]);
   const [reviewedInSession, setReviewedInSession] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [formData, setFormData] = useState({
     writing: '',
     reading: '',
@@ -246,6 +247,91 @@ function App() {
       month: 'short', 
       day: 'numeric' 
     });
+  };
+
+  // Función para exportar datos
+  const exportData = () => {
+    const dataStr = JSON.stringify(words, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `vocabulario-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    alert('✅ Datos exportados correctamente');
+    setShowExportMenu(false);
+  };
+
+  // Función para importar datos
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedWords = JSON.parse(e.target.result);
+        
+        if (!Array.isArray(importedWords)) {
+          alert('❌ Archivo inválido');
+          return;
+        }
+
+        // Preguntar si sobrescribir o combinar
+        const shouldMerge = confirm(
+          `¿Cómo quieres importar?\n\n` +
+          `OK = COMBINAR con palabras existentes (${words.length} palabras)\n` +
+          `Cancelar = REEMPLAZAR todas las palabras actuales\n\n` +
+          `El archivo contiene ${importedWords.length} palabras`
+        );
+
+        if (shouldMerge) {
+          // Combinar evitando duplicados
+          const existingIds = new Set(words.map(w => w.id));
+          const newWords = importedWords.filter(w => !existingIds.has(w.id));
+          const combined = [...words, ...newWords];
+          saveWords(combined);
+          alert(`✅ Importado correctamente\n\nAgregadas: ${newWords.length} palabras nuevas\nTotal: ${combined.length} palabras`);
+        } else {
+          // Reemplazar todo
+          saveWords(importedWords);
+          alert(`✅ Datos reemplazados\n\nAhora tienes ${importedWords.length} palabras`);
+        }
+        
+        setShowExportMenu(false);
+      } catch (error) {
+        alert('❌ Error al importar: Archivo corrupto o inválido');
+        console.error(error);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Función para limpiar todos los datos
+  const clearAllData = () => {
+    if (confirm('⚠️ ¿ELIMINAR TODAS LAS PALABRAS?\n\nEsta acción NO se puede deshacer.\n\nRecomendamos exportar primero.')) {
+      if (confirm('🔴 ÚLTIMA CONFIRMACIÓN\n\n¿Estás SEGURA de eliminar todo?')) {
+        saveWords([]);
+        alert('✅ Todos los datos han sido eliminados');
+        setShowExportMenu(false);
+      }
+    }
+  };
+
+  // Estadísticas generales
+  const stats = {
+    total: words.length,
+    porIdioma: languageStats,
+    porEstado: {
+      noSe: words.filter(w => w.status === 'no-se').length,
+      algoSe: words.filter(w => w.status === 'algo-se').length,
+      laSe: words.filter(w => w.status === 'la-se').length,
+      excluidas: words.filter(w => w.status === 'excluir').length,
+    },
+    totalRevisiones: words.reduce((sum, w) => sum + (w.reviewCount || 0), 0),
   };
 
   if (view === 'flashcards') {
@@ -526,6 +612,9 @@ function App() {
         <button onClick={startFlashcards} style={styles.flashcardBtn}>
           🧠 Repasar {needsReviewCount > 0 && `(${needsReviewCount})`}
         </button>
+        <button onClick={() => setShowExportMenu(true)} style={styles.exportBtn}>
+          💾 Datos
+        </button>
       </div>
 
       <div style={styles.wordsList}>
@@ -621,6 +710,94 @@ function App() {
           </>
         )}
       </div>
+
+      {/* Modal de Exportación/Importación */}
+      {showExportMenu && (
+        <div style={styles.modalOverlay} onClick={() => setShowExportMenu(false)}>
+          <div style={styles.exportModal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.exportHeader}>
+              <h2 style={styles.exportTitle}>💾 Gestión de Datos</h2>
+              <button onClick={() => setShowExportMenu(false)} style={styles.closeBtn}>✕</button>
+            </div>
+
+            {/* Estadísticas */}
+            <div style={styles.statsSection}>
+              <h3 style={styles.statsTitle}>📊 Estadísticas</h3>
+              <div style={styles.statsGrid}>
+                <div style={styles.statCard}>
+                  <div style={styles.statNumber}>{stats.total}</div>
+                  <div style={styles.statLabel}>Palabras totales</div>
+                </div>
+                <div style={styles.statCard}>
+                  <div style={styles.statNumber}>{stats.totalRevisiones}</div>
+                  <div style={styles.statLabel}>Revisiones totales</div>
+                </div>
+              </div>
+
+              <div style={styles.statsRow}>
+                <div style={styles.miniStat}>
+                  <span style={{...styles.statusDot, background: '#fee2e2'}}></span>
+                  No sé: {stats.porEstado.noSe}
+                </div>
+                <div style={styles.miniStat}>
+                  <span style={{...styles.statusDot, background: '#fef3c7'}}></span>
+                  Algo sé: {stats.porEstado.algoSe}
+                </div>
+                <div style={styles.miniStat}>
+                  <span style={{...styles.statusDot, background: '#d1fae5'}}></span>
+                  La sé: {stats.porEstado.laSe}
+                </div>
+              </div>
+
+              <div style={styles.statsRow}>
+                <div style={styles.miniStat}>🇯🇵 {stats.porIdioma.japones}</div>
+                <div style={styles.miniStat}>🇨🇳 {stats.porIdioma.chino}</div>
+                <div style={styles.miniStat}>🇰🇷 {stats.porIdioma.coreano}</div>
+                <div style={styles.miniStat}>🌐 {stats.porIdioma.otro}</div>
+              </div>
+            </div>
+
+            {/* Opciones de exportación/importación */}
+            <div style={styles.exportOptions}>
+              <button onClick={exportData} style={styles.exportOptionBtn}>
+                <span style={styles.exportIcon}>📥</span>
+                <div>
+                  <div style={styles.exportOptionTitle}>Exportar Datos</div>
+                  <div style={styles.exportOptionDesc}>Descargar backup en formato JSON</div>
+                </div>
+              </button>
+
+              <label style={styles.exportOptionBtn}>
+                <span style={styles.exportIcon}>📤</span>
+                <div>
+                  <div style={styles.exportOptionTitle}>Importar Datos</div>
+                  <div style={styles.exportOptionDesc}>Cargar backup desde archivo</div>
+                </div>
+                <input 
+                  type="file" 
+                  accept=".json"
+                  onChange={importData}
+                  style={{display: 'none'}}
+                />
+              </label>
+
+              <button onClick={clearAllData} style={{...styles.exportOptionBtn, ...styles.dangerBtn}}>
+                <span style={styles.exportIcon}>🗑️</span>
+                <div>
+                  <div style={styles.exportOptionTitle}>Eliminar Todo</div>
+                  <div style={styles.exportOptionDesc}>Borrar todas las palabras (irreversible)</div>
+                </div>
+              </button>
+            </div>
+
+            <div style={styles.exportFooter}>
+              <p style={styles.exportNote}>
+                💡 <strong>Consejo:</strong> Exporta tus datos regularmente para tener un backup seguro.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -644,6 +821,7 @@ const styles = {
   actionButtons: { display: 'flex', gap: '10px', marginBottom: '20px' },
   addBtn: { flex: 1, padding: '16px', background: '#6366f1', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(99,102,241,0.3)' },
   flashcardBtn: { flex: 1, padding: '16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(139,92,246,0.3)' },
+  exportBtn: { padding: '16px 24px', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 8px rgba(16,185,129,0.3)' },
   wordsList: { display: 'flex', flexDirection: 'column', gap: '12px' },
   wordCard: { background: 'white', padding: '16px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'transform 0.2s, box-shadow 0.2s' },
   wordHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' },
