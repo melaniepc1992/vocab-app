@@ -711,68 +711,128 @@ function App() {
         )}
       </div>
 
-      {/* Modal de Exportación/Importación */}
+      {/* Modal de Exportación/Importación - MEJORADO */}
       {showExportMenu && (
         <div style={styles.modalOverlay} onClick={() => setShowExportMenu(false)}>
           <div style={styles.exportModal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.exportHeader}>
-              <h2 style={styles.exportTitle}>💾 Gestión de Datos</h2>
+            
+            {/* Header con degradado */}
+            <div style={styles.exportHeaderGradient}>
+              <div style={styles.exportHeaderContent}>
+                <div style={styles.exportHeaderIcon}>💾</div>
+                <div>
+                  <h2 style={styles.exportTitle}>Gestión de Datos</h2>
+                  <p style={styles.exportSubtitle}>Backup, importación y estadísticas</p>
+                </div>
+              </div>
               <button onClick={() => setShowExportMenu(false)} style={styles.closeBtn}>✕</button>
             </div>
 
-            {/* Estadísticas */}
+            {/* Estadísticas mejoradas */}
             <div style={styles.statsSection}>
-              <h3 style={styles.statsTitle}>📊 Estadísticas</h3>
               <div style={styles.statsGrid}>
-                <div style={styles.statCard}>
+                <div style={{...styles.statCard, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}}>
+                  <div style={styles.statIcon}>📚</div>
                   <div style={styles.statNumber}>{stats.total}</div>
-                  <div style={styles.statLabel}>Palabras totales</div>
+                  <div style={styles.statLabel}>Palabras</div>
                 </div>
-                <div style={styles.statCard}>
+                <div style={{...styles.statCard, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'}}>
+                  <div style={styles.statIcon}>🔄</div>
                   <div style={styles.statNumber}>{stats.totalRevisiones}</div>
-                  <div style={styles.statLabel}>Revisiones totales</div>
+                  <div style={styles.statLabel}>Revisiones</div>
                 </div>
               </div>
 
-              <div style={styles.statsRow}>
-                <div style={styles.miniStat}>
-                  <span style={{...styles.statusDot, background: '#fee2e2'}}></span>
-                  No sé: {stats.porEstado.noSe}
-                </div>
-                <div style={styles.miniStat}>
-                  <span style={{...styles.statusDot, background: '#fef3c7'}}></span>
-                  Algo sé: {stats.porEstado.algoSe}
-                </div>
-                <div style={styles.miniStat}>
-                  <span style={{...styles.statusDot, background: '#d1fae5'}}></span>
-                  La sé: {stats.porEstado.laSe}
+              {/* Estado del aprendizaje */}
+              <div style={styles.progressSection}>
+                <h4 style={styles.progressTitle}>Estado de Aprendizaje</h4>
+                <div style={styles.progressBars}>
+                  <div style={styles.progressItem}>
+                    <div style={styles.progressLabel}>
+                      <span>❌ No la sé</span>
+                      <span style={styles.progressValue}>{stats.porEstado.noSe}</span>
+                    </div>
+                    <div style={styles.progressBarBg}>
+                      <div style={{...styles.progressBarFill, width: `${(stats.porEstado.noSe / stats.total * 100) || 0}%`, background: '#ef4444'}}></div>
+                    </div>
+                  </div>
+
+                  <div style={styles.progressItem}>
+                    <div style={styles.progressLabel}>
+                      <span>⚠️ Algo sé</span>
+                      <span style={styles.progressValue}>{stats.porEstado.algoSe}</span>
+                    </div>
+                    <div style={styles.progressBarBg}>
+                      <div style={{...styles.progressBarFill, width: `${(stats.porEstado.algoSe / stats.total * 100) || 0}%`, background: '#f59e0b'}}></div>
+                    </div>
+                  </div>
+
+                  <div style={styles.progressItem}>
+                    <div style={styles.progressLabel}>
+                      <span>✅ La sé</span>
+                      <span style={styles.progressValue}>{stats.porEstado.laSe}</span>
+                    </div>
+                    <div style={styles.progressBarBg}>
+                      <div style={{...styles.progressBarFill, width: `${(stats.porEstado.laSe / stats.total * 100) || 0}%`, background: '#10b981'}}></div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div style={styles.statsRow}>
-                <div style={styles.miniStat}>🇯🇵 {stats.porIdioma.japones}</div>
-                <div style={styles.miniStat}>🇨🇳 {stats.porIdioma.chino}</div>
-                <div style={styles.miniStat}>🇰🇷 {stats.porIdioma.coreano}</div>
-                <div style={styles.miniStat}>🌐 {stats.porIdioma.otro}</div>
+              {/* Idiomas con badges mejorados */}
+              <div style={styles.languagesSection}>
+                <h4 style={styles.progressTitle}>Por Idioma</h4>
+                <div style={styles.languageBadges}>
+                  {stats.porIdioma.japones > 0 && (
+                    <div style={{...styles.languageBadge, background: 'linear-gradient(135deg, #ffeef8 0%, #ffe5f1 100%)', border: '2px solid #ec4899'}}>
+                      <span style={styles.languageBadgeIcon}>🇯🇵</span>
+                      <span style={styles.languageBadgeText}>{stats.porIdioma.japones}</span>
+                    </div>
+                  )}
+                  {stats.porIdioma.chino > 0 && (
+                    <div style={{...styles.languageBadge, background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)', border: '2px solid #ef4444'}}>
+                      <span style={styles.languageBadgeIcon}>🇨🇳</span>
+                      <span style={styles.languageBadgeText}>{stats.porIdioma.chino}</span>
+                    </div>
+                  )}
+                  {stats.porIdioma.coreano > 0 && (
+                    <div style={{...styles.languageBadge, background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)', border: '2px solid #3b82f6'}}>
+                      <span style={styles.languageBadgeIcon}>🇰🇷</span>
+                      <span style={styles.languageBadgeText}>{stats.porIdioma.coreano}</span>
+                    </div>
+                  )}
+                  {stats.porIdioma.otro > 0 && (
+                    <div style={{...styles.languageBadge, background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)', border: '2px solid #6b7280'}}>
+                      <span style={styles.languageBadgeIcon}>🌐</span>
+                      <span style={styles.languageBadgeText}>{stats.porIdioma.otro}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Opciones de exportación/importación */}
+            {/* Opciones de acción mejoradas */}
             <div style={styles.exportOptions}>
-              <button onClick={exportData} style={styles.exportOptionBtn}>
-                <span style={styles.exportIcon}>📥</span>
-                <div>
-                  <div style={styles.exportOptionTitle}>Exportar Datos</div>
-                  <div style={styles.exportOptionDesc}>Descargar backup en formato JSON</div>
+              <button onClick={exportData} style={{...styles.exportOptionBtn, ...styles.exportBtnPrimary}}>
+                <div style={styles.exportOptionIconWrapper}>
+                  <span style={styles.exportIcon}>📥</span>
                 </div>
+                <div style={styles.exportOptionContent}>
+                  <div style={styles.exportOptionTitle}>Exportar Backup</div>
+                  <div style={styles.exportOptionDesc}>Descarga todas tus palabras en formato JSON</div>
+                </div>
+                <div style={styles.exportArrow}>→</div>
               </button>
 
-              <label style={styles.exportOptionBtn}>
-                <span style={styles.exportIcon}>📤</span>
-                <div>
-                  <div style={styles.exportOptionTitle}>Importar Datos</div>
-                  <div style={styles.exportOptionDesc}>Cargar backup desde archivo</div>
+              <label style={{...styles.exportOptionBtn, ...styles.exportBtnSecondary}}>
+                <div style={styles.exportOptionIconWrapper}>
+                  <span style={styles.exportIcon}>📤</span>
                 </div>
+                <div style={styles.exportOptionContent}>
+                  <div style={styles.exportOptionTitle}>Importar Backup</div>
+                  <div style={styles.exportOptionDesc}>Restaura o combina datos desde un archivo</div>
+                </div>
+                <div style={styles.exportArrow}>→</div>
                 <input 
                   type="file" 
                   accept=".json"
@@ -781,19 +841,26 @@ function App() {
                 />
               </label>
 
-              <button onClick={clearAllData} style={{...styles.exportOptionBtn, ...styles.dangerBtn}}>
-                <span style={styles.exportIcon}>🗑️</span>
-                <div>
-                  <div style={styles.exportOptionTitle}>Eliminar Todo</div>
-                  <div style={styles.exportOptionDesc}>Borrar todas las palabras (irreversible)</div>
+              <button onClick={clearAllData} style={{...styles.exportOptionBtn, ...styles.exportBtnDanger}}>
+                <div style={styles.exportOptionIconWrapper}>
+                  <span style={styles.exportIcon}>🗑️</span>
                 </div>
+                <div style={styles.exportOptionContent}>
+                  <div style={styles.exportOptionTitle}>Eliminar Todo</div>
+                  <div style={styles.exportOptionDesc}>Borra permanentemente todas las palabras</div>
+                </div>
+                <div style={styles.exportArrow}>→</div>
               </button>
             </div>
 
+            {/* Footer con consejo */}
             <div style={styles.exportFooter}>
-              <p style={styles.exportNote}>
-                💡 <strong>Consejo:</strong> Exporta tus datos regularmente para tener un backup seguro.
-              </p>
+              <div style={styles.tipBox}>
+                <span style={styles.tipIcon}>💡</span>
+                <div>
+                  <strong>Consejo de seguridad:</strong> Exporta tus datos regularmente. Guarda los backups en Google Drive, Dropbox o un lugar seguro.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -898,7 +965,255 @@ const styles = {
   statusButtons: { display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap', justifyContent: 'center' },
   statusButton: { padding: '12px 20px', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', minWidth: '120px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
   navigation: { display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '10px' },
-  navButton: { background: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }
+  navButton: { background: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+  
+  // Modal de exportación
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px',
+    animation: 'fadeIn 0.2s ease-out'
+  },
+  exportModal: {
+    background: 'white',
+    borderRadius: '24px',
+    maxWidth: '650px',
+    width: '100%',
+    maxHeight: '90vh',
+    overflow: 'auto',
+    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+    animation: 'slideUp 0.3s ease-out'
+  },
+  exportHeaderGradient: {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    padding: '32px 28px',
+    borderTopLeftRadius: '24px',
+    borderTopRightRadius: '24px',
+    color: 'white',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start'
+  },
+  exportHeaderContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px'
+  },
+  exportHeaderIcon: {
+    fontSize: '48px'
+  },
+  exportTitle: {
+    margin: '0',
+    fontSize: '28px',
+    fontWeight: 'bold',
+    color: 'white'
+  },
+  exportSubtitle: {
+    margin: '4px 0 0 0',
+    fontSize: '14px',
+    color: 'rgba(255,255,255,0.9)'
+  },
+  closeBtn: {
+    background: 'rgba(255,255,255,0.2)',
+    border: 'none',
+    fontSize: '24px',
+    color: 'white',
+    cursor: 'pointer',
+    padding: '8px 12px',
+    lineHeight: '1',
+    borderRadius: '8px',
+    transition: 'all 0.2s'
+  },
+  statsSection: {
+    padding: '28px'
+  },
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '16px',
+    marginBottom: '24px'
+  },
+  statCard: {
+    padding: '24px',
+    borderRadius: '16px',
+    textAlign: 'center',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    transition: 'transform 0.2s'
+  },
+  statIcon: {
+    fontSize: '32px',
+    marginBottom: '8px'
+  },
+  statNumber: {
+    fontSize: '36px',
+    fontWeight: 'bold',
+    marginBottom: '4px'
+  },
+  statLabel: {
+    fontSize: '14px',
+    opacity: 0.95,
+    fontWeight: '500'
+  },
+  progressSection: {
+    marginBottom: '24px'
+  },
+  progressTitle: {
+    margin: '0 0 16px 0',
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1f2937'
+  },
+  progressBars: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  progressItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  progressLabel: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#4b5563'
+  },
+  progressValue: {
+    color: '#6b7280'
+  },
+  progressBarBg: {
+    height: '8px',
+    background: '#e5e7eb',
+    borderRadius: '4px',
+    overflow: 'hidden'
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: '4px',
+    transition: 'width 0.5s ease-out'
+  },
+  languagesSection: {
+    paddingTop: '16px',
+    borderTop: '1px solid #e5e7eb'
+  },
+  languageBadges: {
+    display: 'flex',
+    gap: '12px',
+    flexWrap: 'wrap'
+  },
+  languageBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 18px',
+    borderRadius: '12px',
+    fontWeight: '600',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+  },
+  languageBadgeIcon: {
+    fontSize: '24px'
+  },
+  languageBadgeText: {
+    fontSize: '18px',
+    color: '#1f2937'
+  },
+  exportOptions: {
+    padding: '0 28px 28px 28px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  exportOptionBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '20px',
+    border: 'none',
+    borderRadius: '16px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    textAlign: 'left',
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  exportBtnPrimary: {
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+  },
+  exportBtnSecondary: {
+    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+  },
+  exportBtnDanger: {
+    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+  },
+  exportOptionIconWrapper: {
+    width: '56px',
+    height: '56px',
+    background: 'rgba(255,255,255,0.2)',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
+  },
+  exportIcon: {
+    fontSize: '28px'
+  },
+  exportOptionContent: {
+    flex: 1
+  },
+  exportOptionTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    marginBottom: '4px'
+  },
+  exportOptionDesc: {
+    fontSize: '13px',
+    opacity: 0.9
+  },
+  exportArrow: {
+    fontSize: '24px',
+    opacity: 0.7,
+    fontWeight: 'bold'
+  },
+  exportFooter: {
+    padding: '24px 28px',
+    background: 'linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%)',
+    borderBottomLeftRadius: '24px',
+    borderBottomRightRadius: '24px'
+  },
+  tipBox: {
+    display: 'flex',
+    gap: '12px',
+    padding: '16px',
+    background: 'white',
+    borderRadius: '12px',
+    border: '2px solid #e5e7eb',
+    fontSize: '13px',
+    color: '#4b5563',
+    lineHeight: '1.6'
+  },
+  tipIcon: {
+    fontSize: '20px',
+    flexShrink: 0
+  }
 };
 
 ReactDOM.render(<App />, document.getElementById('root'));
