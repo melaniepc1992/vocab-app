@@ -3,13 +3,13 @@ const { useState, useEffect } = React;
 const STORAGE_KEY = 'vocab_words';
 const ITEMS_PER_PAGE = 10;
 
-// Algoritmo de repetición espaciada
+// Algoritmo de repetición espaciada - MODIFICADO
 const calculateNextReview = (status, lastReview) => {
   const now = new Date();
   const intervals = {
-    'no-se': 5 * 60 * 1000,      // 5 minutos
-    'algo-se': 24 * 60 * 60 * 1000, // 1 día
-    'la-se': Infinity              // No revisar más
+    'no-se': 15 * 24 * 60 * 60 * 1000,  // 15 días (CAMBIADO)
+    'algo-se': 24 * 60 * 60 * 1000,      // 1 día
+    'la-se': Infinity                     // No revisar más
   };
   
   if (!lastReview) return now;
@@ -33,6 +33,9 @@ function App() {
   const [reviewedInSession, setReviewedInSession] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showReviewFilter, setShowReviewFilter] = useState(false);
+  const [reviewFilterLanguage, setReviewFilterLanguage] = useState('todos');
+  const [reviewFilterLevel, setReviewFilterLevel] = useState('todos');
   const [formData, setFormData] = useState({
     writing: '',
     reading: '',
@@ -165,7 +168,18 @@ function App() {
   const startFlashcards = () => {
     const now = new Date();
     
-    const needReview = filteredWords.filter(w => {
+    // Aplicar filtros de idioma y nivel para el repaso
+    let wordsToReview = words;
+    
+    if (reviewFilterLanguage !== 'todos') {
+      wordsToReview = wordsToReview.filter(w => w.language === reviewFilterLanguage);
+    }
+    
+    if (reviewFilterLevel !== 'todos') {
+      wordsToReview = wordsToReview.filter(w => w.level === reviewFilterLevel);
+    }
+    
+    const needReview = wordsToReview.filter(w => {
       if (w.status === 'excluir') return false;
       if (w.status === 'la-se') return false;
       
@@ -188,6 +202,7 @@ function App() {
     setCurrentCardIndex(0);
     setShowAnswer(false);
     setReviewedInSession([]);
+    setShowReviewFilter(false);
     setView('flashcards');
   };
 
@@ -401,7 +416,7 @@ function App() {
                 onClick={() => handleStatusUpdate('no-se')} 
                 style={{...styles.statusButton, background: '#fee2e2', color: '#991b1b'}}>
                 ❌ No la sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 5 min</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 15 días</div>
               </button>
               <button 
                 onClick={() => handleStatusUpdate('algo-se')} 
@@ -525,6 +540,8 @@ function App() {
             value={formData.writing}
             onChange={e => setFormData({...formData, writing: e.target.value})}
             style={styles.input}
+            lang={formData.language === 'japones' ? 'ja' : formData.language === 'chino' ? 'zh' : formData.language === 'coreano' ? 'ko' : 'es'}
+            inputMode="text"
           />
 
           <input 
@@ -560,14 +577,37 @@ function App() {
             value={formData.level}
             onChange={e => setFormData({...formData, level: e.target.value})}
             style={styles.input}>
-            <option value="N5/HSK1">N5 / HSK1</option>
-            <option value="N4/HSK2">N4 / HSK2</option>
-            <option value="N3/HSK3">N3 / HSK3</option>
-            <option value="N2/HSK4">N2 / HSK4</option>
-            <option value="N1/HSK5">N1 / HSK5</option>
-            <option value="HSK6">HSK6</option>
-            <option value="TOPIK1">TOPIK 1</option>
-            <option value="TOPIK2">TOPIK 2</option>
+            <option value="">Seleccionar nivel...</option>
+            <optgroup label="JLPT (Japonés)">
+              <option value="N5">N5 - Básico</option>
+              <option value="N4">N4 - Básico-Intermedio</option>
+              <option value="N3">N3 - Intermedio</option>
+              <option value="N2">N2 - Intermedio-Avanzado</option>
+              <option value="N1">N1 - Avanzado</option>
+              <option value="Palabra común">Palabra común</option>
+              <option value="Palabra rara">Palabra rara</option>
+            </optgroup>
+            <optgroup label="HSK (Chino)">
+              <option value="HSK1">HSK 1 - Básico</option>
+              <option value="HSK2">HSK 2 - Básico-Intermedio</option>
+              <option value="HSK3">HSK 3 - Intermedio</option>
+              <option value="HSK4">HSK 4 - Intermedio-Avanzado</option>
+              <option value="HSK5">HSK 5 - Avanzado</option>
+              <option value="HSK6">HSK 6 - Muy Avanzado</option>
+              <option value="HSK7-9">HSK 7-9 - Dominio</option>
+            </optgroup>
+            <optgroup label="TOPIK (Coreano)">
+              <option value="TOPIK1">TOPIK 1 - Básico</option>
+              <option value="TOPIK2">TOPIK 2 - Intermedio-Avanzado</option>
+            </optgroup>
+            <optgroup label="Otros">
+              <option value="A1">A1 - Principiante</option>
+              <option value="A2">A2 - Elemental</option>
+              <option value="B1">B1 - Intermedio</option>
+              <option value="B2">B2 - Intermedio Alto</option>
+              <option value="C1">C1 - Avanzado</option>
+              <option value="C2">C2 - Maestría</option>
+            </optgroup>
           </select>
 
           <select 
@@ -609,7 +649,7 @@ function App() {
             ➕ Nueva Palabra
           </button>
         )}
-        <button onClick={startFlashcards} style={styles.flashcardBtn}>
+        <button onClick={() => setShowReviewFilter(true)} style={styles.flashcardBtn}>
           🧠 Repasar {needsReviewCount > 0 && `(${needsReviewCount})`}
         </button>
         <button onClick={() => setShowExportMenu(true)} style={styles.exportBtn}>
@@ -1213,6 +1253,109 @@ const styles = {
   tipIcon: {
     fontSize: '20px',
     flexShrink: 0
+  },
+
+  // Modal de filtros de repaso
+  reviewFilterModal: {
+    background: 'white',
+    borderRadius: '20px',
+    maxWidth: '500px',
+    width: '100%',
+    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+    animation: 'slideUp 0.3s ease-out'
+  },
+  reviewFilterHeader: {
+    background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+    padding: '24px',
+    borderTopLeftRadius: '20px',
+    borderTopRightRadius: '20px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  reviewFilterTitle: {
+    margin: 0,
+    fontSize: '24px',
+    fontWeight: 'bold',
+    color: 'white'
+  },
+  reviewFilterContent: {
+    padding: '24px'
+  },
+  reviewFilterDesc: {
+    margin: '0 0 20px 0',
+    fontSize: '14px',
+    color: '#666'
+  },
+  filterGroup: {
+    marginBottom: '20px'
+  },
+  filterLabel: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: '8px'
+  },
+  filterSelect: {
+    width: '100%',
+    padding: '12px',
+    fontSize: '16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '10px',
+    background: 'white',
+    cursor: 'pointer',
+    transition: 'border-color 0.2s'
+  },
+  reviewSummary: {
+    display: 'flex',
+    gap: '16px',
+    padding: '20px',
+    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+    borderRadius: '12px',
+    border: '2px solid #3b82f6',
+    marginBottom: '20px'
+  },
+  reviewSummaryIcon: {
+    fontSize: '32px'
+  },
+  reviewSummaryTitle: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: '#1e40af',
+    marginBottom: '4px'
+  },
+  reviewSummaryDesc: {
+    fontSize: '13px',
+    color: '#3b82f6'
+  },
+  reviewFilterButtons: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+  startReviewBtn: {
+    padding: '16px',
+    background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+    transition: 'transform 0.2s'
+  },
+  resetFiltersBtn: {
+    padding: '12px',
+    background: 'white',
+    color: '#6b7280',
+    border: '2px solid #e5e7eb',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
   }
 };
 
