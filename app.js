@@ -1,3 +1,4 @@
+
 const { useState, useEffect } = React;
 
 const STORAGE_KEY = 'vocab_words';
@@ -7,9 +8,9 @@ const ITEMS_PER_PAGE = 10;
 const calculateNextReview = (status, lastReview) => {
   const now = new Date();
   const intervals = {
-    'no-se': 15 * 24 * 60 * 60 * 1000,  // 15 días (CAMBIADO)
+    'no-se': 5 * 60 * 1000,      // 5 minutos
     'algo-se': 24 * 60 * 60 * 1000,      // 1 día
-    'la-se': Infinity                     // No revisar más
+    'la-se': 15 * 24 * 60 * 60 * 1000,  // 15 días (CAMBIADO)
   };
   
   if (!lastReview) return now;
@@ -41,7 +42,7 @@ function App() {
     reading: '',
     meaning: '',
     type: 'sustantivo',
-    level: 'N5/HSK1',
+    level: 'N5',
     status: 'no-se',
     language: 'japones'
   });
@@ -93,7 +94,7 @@ function App() {
       reading: '',
       meaning: '',
       type: 'sustantivo',
-      level: 'N5/HSK1',
+      level: 'N5',
       status: 'no-se',
       language: 'japones'
     });
@@ -253,6 +254,26 @@ function App() {
     const nextReviewDate = w.nextReview ? new Date(w.nextReview) : new Date(0);
     return now >= nextReviewDate;
   }).length;
+
+  // Contar palabras disponibles para repaso con los filtros actuales del modal
+  const getReviewCountWithFilters = (langFilter, levelFilter) => {
+    const now = new Date();
+    let wordsToCount = words;
+    
+    if (langFilter !== 'todos') {
+      wordsToCount = wordsToCount.filter(w => w.language === langFilter);
+    }
+    
+    if (levelFilter !== 'todos') {
+      wordsToCount = wordsToCount.filter(w => w.level === levelFilter);
+    }
+    
+    return wordsToCount.filter(w => {
+      if (w.status === 'excluir' || w.status === 'la-se') return false;
+      const nextReviewDate = w.nextReview ? new Date(w.nextReview) : new Date(0);
+      return now >= nextReviewDate;
+    }).length;
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Sin fecha';
