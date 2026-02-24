@@ -1,4 +1,3 @@
-
 const { useState, useEffect } = React;
 
 const STORAGE_KEY = 'vocab_words';
@@ -8,9 +7,9 @@ const ITEMS_PER_PAGE = 10;
 const calculateNextReview = (status, lastReview) => {
   const now = new Date();
   const intervals = {
-    'no-se': 5 * 60 * 1000,      // 5 minutos
+    'no-se': 60 * 60 * 1000,  // 1 hora
     'algo-se': 24 * 60 * 60 * 1000,      // 1 día
-    'la-se': 15 * 24 * 60 * 60 * 1000,  // 15 días (CAMBIADO)
+    'la-se': 7 * 24 * 60 * 60 * 1000,                // 1 semana
   };
   
   if (!lastReview) return now;
@@ -403,12 +402,10 @@ function App() {
 
         <div style={styles.flashcard}>
           <div style={styles.languageTag}>
-            <text style={styles.languageTagText}>
-              {currentWord.language === 'japones' && '🇯🇵 Japonés'}
-              {currentWord.language === 'chino' && '🇨🇳 Chino'}
-              {currentWord.language === 'coreano' && '🇰🇷 Coreano'}
-              {currentWord.language === 'otro' && '🌐 Otro'}
-            </text>
+            {currentWord.language === 'japones' && '🇯🇵 Japonés'}
+            {currentWord.language === 'chino' && '🇨🇳 Chino'}
+            {currentWord.language === 'coreano' && '🇰🇷 Coreano'}
+            {currentWord.language === 'otro' && '🌐 Otro'}
           </div>
           
           <h2 style={styles.writing}>{currentWord.writing}</h2>
@@ -653,7 +650,7 @@ function App() {
                 reading: '',
                 meaning: '',
                 type: 'sustantivo',
-                level: 'N5/HSK1',
+                level: 'N5',
                 status: 'no-se',
                 language: 'japones'
               });
@@ -771,6 +768,81 @@ function App() {
           </>
         )}
       </div>
+
+      {/* Modal de Filtros para Repaso */}
+      {showReviewFilter && (
+        <div style={styles.modalOverlay} onClick={() => setShowReviewFilter(false)}>
+          <div style={styles.reviewFilterModal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.reviewFilterHeader}>
+              <h2 style={styles.reviewFilterTitle}>🧠 Configurar Repaso</h2>
+              <button onClick={() => setShowReviewFilter(false)} style={styles.closeBtn}>✕</button>
+            </div>
+
+            <div style={styles.reviewFilterContent}>
+              <p style={styles.reviewFilterDesc}>
+                Selecciona qué palabras quieres repasar:
+              </p>
+
+              {/* Filtro por idioma */}
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>🌐 Idioma:</label>
+                <select 
+                  value={reviewFilterLanguage}
+                  onChange={(e) => setReviewFilterLanguage(e.target.value)}
+                  style={styles.filterSelect}>
+                  <option value="todos">Todos los idiomas</option>
+                  <option value="japones">🇯🇵 Japonés</option>
+                  <option value="chino">🇨🇳 Chino</option>
+                  <option value="coreano">🇰🇷 Coreano</option>
+                  <option value="otro">🌐 Otro</option>
+                </select>
+              </div>
+
+              {/* Filtro por nivel */}
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>📊 Nivel:</label>
+                <select 
+                  value={reviewFilterLevel}
+                  onChange={(e) => setReviewFilterLevel(e.target.value)}
+                  style={styles.filterSelect}>
+                  <option value="todos">Todos los niveles</option>
+                  {uniqueLevels.map(level => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Resumen */}
+              <div style={styles.reviewSummary}>
+                <div style={styles.reviewSummaryIcon}>📝</div>
+                <div>
+                  <div style={styles.reviewSummaryTitle}>
+                    {getReviewCountWithFilters(reviewFilterLanguage, reviewFilterLevel)} palabras listas para repasar
+                  </div>
+                  <div style={styles.reviewSummaryDesc}>
+                    Con los filtros seleccionados
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones */}
+              <div style={styles.reviewFilterButtons}>
+                <button onClick={startFlashcards} style={styles.startReviewBtn}>
+                  Comenzar Repaso
+                </button>
+                <button 
+                  onClick={() => {
+                    setReviewFilterLanguage('todos');
+                    setReviewFilterLevel('todos');
+                  }} 
+                  style={styles.resetFiltersBtn}>
+                  Resetear Filtros
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Exportación/Importación - MEJORADO */}
       {showExportMenu && (
