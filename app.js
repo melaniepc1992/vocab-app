@@ -66,6 +66,16 @@ function App() {
 
     const now = new Date().toISOString();
 
+    const writingNormalizado = formData.writing.trim().toLowerCase();
+  const duplicado = words.find(w => 
+    w.writing.trim().toLowerCase() === writingNormalizado && w.id !== editingId
+  );
+
+  if (duplicado) {
+    alert(`⚠️ La palabra "${formData.writing}" ya existe en tu vocabulario.\n\nSi querés modificarla, buscala en el listado y usá el botón de edición.`);
+    return;
+  }
+
     if (editingId) {
       const updated = words.map(w => 
         w.id === editingId ? { 
@@ -434,7 +444,7 @@ function App() {
                 onClick={() => handleStatusUpdate('no-se')} 
                 style={{...styles.statusButton, background: '#fee2e2', color: '#991b1b'}}>
                 ❌ No la sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 15 días</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 1 hora</div>
               </button>
               <button 
                 onClick={() => handleStatusUpdate('algo-se')} 
@@ -446,7 +456,7 @@ function App() {
                 onClick={() => handleStatusUpdate('la-se')} 
                 style={{...styles.statusButton, background: '#d1fae5', color: '#065f46'}}>
                 ✅ La sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>No revisar más</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 1 semana</div>
               </button>
             </div>
           )}
