@@ -7,9 +7,9 @@ const ITEMS_PER_PAGE = 10;
 const calculateNextReview = (status, lastReview) => {
   const now = new Date();
   const intervals = {
-    'no-se': 15 * 24 * 60 * 60 * 1000,  // 15 días
+    'no-se': 60 * 60 * 1000,  // 1 hora
     'algo-se': 24 * 60 * 60 * 1000,      // 1 día
-    'la-se': Infinity                     // No revisar más
+    'la-se': 7 * 24 * 60 * 60 * 1000,               // 1 semana
   };
   
   if (!lastReview) return now;
@@ -460,7 +460,7 @@ function App() {
                 onClick={() => handleStatusUpdate('no-se')} 
                 style={{...styles.statusButton, background: '#fee2e2', color: '#991b1b'}}>
                 ❌ No la sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 15 días</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 1 hora</div>
               </button>
               <button 
                 onClick={() => handleStatusUpdate('algo-se')} 
@@ -472,7 +472,7 @@ function App() {
                 onClick={() => handleStatusUpdate('la-se')} 
                 style={{...styles.statusButton, background: '#d1fae5', color: '#065f46'}}>
                 ✅ La sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>No revisar más</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 1 semana</div>
               </button>
             </div>
           )}
@@ -1510,3 +1510,4 @@ const styles = {
 };
 
 ReactDOM.render(<App />, document.getElementById('root'));
+
