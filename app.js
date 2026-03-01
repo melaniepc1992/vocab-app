@@ -7,9 +7,9 @@ const ITEMS_PER_PAGE = 10;
 const calculateNextReview = (status, lastReview) => {
   const now = new Date();
   const intervals = {
-    'no-se': 60 * 60 * 1000,  // 1 hora
+    'no-se': 15 * 24 * 60 * 60 * 1000,  // 15 días
     'algo-se': 24 * 60 * 60 * 1000,      // 1 día
-    'la-se': 7 * 24 * 60 * 60 * 1000,                // 1 semana
+    'la-se': Infinity                     // No revisar más
   };
   
   if (!lastReview) return now;
@@ -36,6 +36,8 @@ function App() {
   const [showReviewFilter, setShowReviewFilter] = useState(false);
   const [reviewFilterLanguage, setReviewFilterLanguage] = useState('todos');
   const [reviewFilterLevel, setReviewFilterLevel] = useState('todos');
+  // NUEVO: estado para el buscador
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     writing: '',
     reading: '',
@@ -66,15 +68,21 @@ function App() {
 
     const now = new Date().toISOString();
 
+    // NUEVO: Verificar duplicados por writing + language
     const writingNormalizado = formData.writing.trim().toLowerCase();
-  const duplicado = words.find(w => 
-    w.writing.trim().toLowerCase() === writingNormalizado && w.id !== editingId
-  );
+    const duplicado = words.find(w =>
+      w.writing.trim().toLowerCase() === writingNormalizado &&
+      w.language === formData.language &&
+      w.id !== editingId
+    );
 
-  if (duplicado) {
-    alert(`⚠️ La palabra "${formData.writing}" ya existe en tu vocabulario.\n\nSi querés modificarla, buscala en el listado y usá el botón de edición.`);
-    return;
-  }
+    if (duplicado) {
+      const idiomaLabel = {
+        japones: 'Japonés', chino: 'Chino', coreano: 'Coreano', otro: 'Otro'
+      }[formData.language] || formData.language;
+      alert(`⚠️ La palabra "${formData.writing}" ya existe en ${idiomaLabel}.\n\nSi querés modificarla, buscala en el listado y usá el botón de edición.`);
+      return;
+    }
 
     if (editingId) {
       const updated = words.map(w => 
@@ -157,11 +165,19 @@ function App() {
     saveWords(updated);
   };
 
-  // Filtrar por idioma Y nivel
+  // MODIFICADO: Filtrar por idioma, nivel Y búsqueda
   const filteredWords = words.filter(w => {
     const languageMatch = selectedLanguage === 'todos' || w.language === selectedLanguage;
     const levelMatch = selectedLevel === 'todos' || w.level === selectedLevel;
-    return languageMatch && levelMatch;
+
+    // NUEVO: filtro de búsqueda por writing, reading o meaning
+    const query = searchQuery.trim().toLowerCase();
+    const searchMatch = !query ||
+      w.writing.toLowerCase().includes(query) ||
+      w.reading.toLowerCase().includes(query) ||
+      w.meaning.toLowerCase().includes(query);
+
+    return languageMatch && levelMatch && searchMatch;
   });
 
   // Paginación
@@ -170,10 +186,10 @@ function App() {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedWords = filteredWords.slice(startIndex, endIndex);
 
-  // Resetear página cuando cambian los filtros
+  // MODIFICADO: Resetear página cuando cambian los filtros o la búsqueda
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedLanguage, selectedLevel]);
+  }, [selectedLanguage, selectedLevel, searchQuery]);
 
   const startFlashcards = () => {
     const now = new Date();
@@ -444,7 +460,7 @@ function App() {
                 onClick={() => handleStatusUpdate('no-se')} 
                 style={{...styles.statusButton, background: '#fee2e2', color: '#991b1b'}}>
                 ❌ No la sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 1 hora</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 15 días</div>
               </button>
               <button 
                 onClick={() => handleStatusUpdate('algo-se')} 
@@ -456,7 +472,7 @@ function App() {
                 onClick={() => handleStatusUpdate('la-se')} 
                 style={{...styles.statusButton, background: '#d1fae5', color: '#065f46'}}>
                 ✅ La sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 1 semana</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>No revisar más</div>
               </button>
             </div>
           )}
@@ -545,6 +561,37 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* NUEVO: Buscador */}
+      <div style={styles.filterSection}>
+        <h3 style={styles.filterTitle}>🔍 Buscar:</h3>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            placeholder="Buscar por escritura, lectura o significado..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ ...styles.input, marginBottom: 0, paddingRight: '40px' }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute', right: '12px', top: '50%',
+                transform: 'translateY(-50%)', background: 'none',
+                border: 'none', fontSize: '18px', cursor: 'pointer',
+                color: '#999', lineHeight: 1
+              }}>
+              ✕
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: '#666' }}>
+            {filteredWords.length} resultado{filteredWords.length !== 1 ? 's' : ''} para "{searchQuery}"
+          </p>
+        )}
+      </div>
 
       {showForm && (
         <div style={styles.form}>
