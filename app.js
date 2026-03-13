@@ -68,28 +68,7 @@ function App() {
     }
   }, []);
 
-  // NUEVO: Registrar SW para notificaciones push y escuchar mensajes del SW
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        // Decirle al SW que programe el recordatorio semanal
-        registration.active && registration.active.postMessage({ type: 'SCHEDULE_BACKUP_NOTIFICATION' });
 
-        // Registrar periodic sync si el browser lo soporta
-        if ('periodicSync' in registration) {
-          registration.periodicSync.register('backup-reminder', { minInterval: ONE_WEEK_MS })
-            .catch(() => {}); // No todos los browsers lo soportan, ignorar error
-        }
-      });
-
-      // Escuchar mensajes del SW (ej: cuando el usuario toca la notificación)
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'OPEN_EXPORT_MENU') {
-          setShowExportMenu(true);
-        }
-      });
-    }
-  }, []);
 
   const saveWords = (updatedWords) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedWords));
@@ -359,16 +338,9 @@ function App() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    // NUEVO: Registrar fecha del backup y ocultar banner
+    // Registrar fecha del backup y ocultar banner
     localStorage.setItem(LAST_BACKUP_KEY, String(Date.now()));
     setShowBackupBanner(false);
-
-    // NUEVO: Avisar al SW para reprogramar la notificación push
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.active && registration.active.postMessage({ type: 'BACKUP_DONE' });
-      });
-    }
 
     alert('✅ Datos exportados correctamente');
     setShowExportMenu(false);
