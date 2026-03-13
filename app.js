@@ -2,14 +2,16 @@ const { useState, useEffect } = React;
 
 const STORAGE_KEY = 'vocab_words';
 const ITEMS_PER_PAGE = 10;
+const LAST_BACKUP_KEY = 'last_backup_date';
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Algoritmo de repetición espaciada - MODIFICADO
 const calculateNextReview = (status, lastReview) => {
   const now = new Date();
   const intervals = {
-    'no-se': 60 * 60 * 1000,  // 1 hora
+    'no-se': 15 * 24 * 60 * 60 * 1000,  // 15 días
     'algo-se': 24 * 60 * 60 * 1000,      // 1 día
-    'la-se': 7 * 24 * 60 * 60 * 1000,               // 1 semana
+    'la-se': Infinity                     // No revisar más
   };
   
   if (!lastReview) return now;
@@ -38,6 +40,8 @@ function App() {
   const [reviewFilterLevel, setReviewFilterLevel] = useState('todos');
   // NUEVO: estado para el buscador
   const [searchQuery, setSearchQuery] = useState('');
+  // NUEVO: estado para el banner de backup
+  const [showBackupBanner, setShowBackupBanner] = useState(false);
   const [formData, setFormData] = useState({
     writing: '',
     reading: '',
@@ -52,6 +56,38 @@ function App() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       setWords(JSON.parse(stored));
+    }
+  }, []);
+
+  // NUEVO: Verificar si hay que mostrar el banner de backup
+  useEffect(() => {
+    const lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
+    const now = Date.now();
+    if (!lastBackup || now - parseInt(lastBackup) >= ONE_WEEK_MS) {
+      setShowBackupBanner(true);
+    }
+  }, []);
+
+  // NUEVO: Registrar SW para notificaciones push y escuchar mensajes del SW
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        // Decirle al SW que programe el recordatorio semanal
+        registration.active && registration.active.postMessage({ type: 'SCHEDULE_BACKUP_NOTIFICATION' });
+
+        // Registrar periodic sync si el browser lo soporta
+        if ('periodicSync' in registration) {
+          registration.periodicSync.register('backup-reminder', { minInterval: ONE_WEEK_MS })
+            .catch(() => {}); // No todos los browsers lo soportan, ignorar error
+        }
+      });
+
+      // Escuchar mensajes del SW (ej: cuando el usuario toca la notificación)
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'OPEN_EXPORT_MENU') {
+          setShowExportMenu(true);
+        }
+      });
     }
   }, []);
 
@@ -322,6 +358,18 @@ function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    // NUEVO: Registrar fecha del backup y ocultar banner
+    localStorage.setItem(LAST_BACKUP_KEY, String(Date.now()));
+    setShowBackupBanner(false);
+
+    // NUEVO: Avisar al SW para reprogramar la notificación push
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.active && registration.active.postMessage({ type: 'BACKUP_DONE' });
+      });
+    }
+
     alert('✅ Datos exportados correctamente');
     setShowExportMenu(false);
   };
@@ -460,7 +508,7 @@ function App() {
                 onClick={() => handleStatusUpdate('no-se')} 
                 style={{...styles.statusButton, background: '#fee2e2', color: '#991b1b'}}>
                 ❌ No la sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 1 hora</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 15 días</div>
               </button>
               <button 
                 onClick={() => handleStatusUpdate('algo-se')} 
@@ -472,7 +520,7 @@ function App() {
                 onClick={() => handleStatusUpdate('la-se')} 
                 style={{...styles.statusButton, background: '#d1fae5', color: '#065f46'}}>
                 ✅ La sé
-                <div style={{fontSize: '10px', marginTop: '3px'}}>Revisar en 1 semana</div>
+                <div style={{fontSize: '10px', marginTop: '3px'}}>No revisar más</div>
               </button>
             </div>
           )}
@@ -509,6 +557,32 @@ function App() {
           {needsReviewCount > 0 && ` • ${needsReviewCount} pendientes de repaso`}
         </p>
       </div>
+
+      {/* NUEVO: Banner de recordatorio de backup */}
+      {showBackupBanner && (
+        <div style={styles.backupBanner}>
+          <div style={styles.backupBannerContent}>
+            <span style={styles.backupBannerIcon}>⚠️</span>
+            <div style={styles.backupBannerText}>
+              <strong>¡Recordatorio de backup!</strong>
+              <span> Hacé una copia de seguridad para no perder tu progreso.</span>
+            </div>
+          </div>
+          <div style={styles.backupBannerButtons}>
+            <button
+              onClick={() => { setShowExportMenu(true); }}
+              style={styles.backupBannerExportBtn}>
+              📥 Exportar ahora
+            </button>
+            <button
+              onClick={() => setShowBackupBanner(false)}
+              style={styles.backupBannerDismissBtn}
+              title="Cerrar">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <div style={styles.filterSection}>
         <h3 style={styles.filterTitle}>🌐 Filtrar por idioma:</h3>
@@ -1506,8 +1580,65 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s'
+  },
+
+  // Banner de recordatorio de backup
+  backupBanner: {
+    background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+    border: '2px solid #f59e0b',
+    borderRadius: '12px',
+    padding: '14px 16px',
+    marginBottom: '15px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    boxShadow: '0 2px 8px rgba(245,158,11,0.2)',
+    flexWrap: 'wrap'
+  },
+  backupBannerContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    flex: 1,
+    minWidth: '200px'
+  },
+  backupBannerIcon: {
+    fontSize: '22px',
+    flexShrink: 0
+  },
+  backupBannerText: {
+    fontSize: '14px',
+    color: '#92400e',
+    lineHeight: '1.4'
+  },
+  backupBannerButtons: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    flexShrink: 0
+  },
+  backupBannerExportBtn: {
+    padding: '8px 16px',
+    background: '#f59e0b',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap'
+  },
+  backupBannerDismissBtn: {
+    padding: '8px 10px',
+    background: 'transparent',
+    color: '#92400e',
+    border: '1px solid #f59e0b',
+    borderRadius: '8px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    lineHeight: 1
   }
 };
 
 ReactDOM.render(<App />, document.getElementById('root'));
-
